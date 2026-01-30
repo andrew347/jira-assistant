@@ -31,8 +31,7 @@ ACTIONABLE_STATUS=To Do
 - `PROJECT_KEYS` (required for defaults): Comma-separated list of project keys. The first project becomes the default for `create_new_ticket`.
 - `DEFAULT_PRIORITY` (optional): Default priority for new tickets (default: "Medium")
 - `DEFAULT_ISSUE_TYPE` (optional): Default issue type for new tickets (default: "Task")
-- `DEFAULT_SPRINT` (optional): Default sprint ID for new tickets (numeric)
-- `SPRINT_FIELD` (optional): Custom field name for sprints (default: "customfield_10020")
+- `DEFAULT_SPRINT_ID` (optional): Default sprint ID for new tickets (numeric)
 - `ACTIONABLE_STATUS` (optional): Status that indicates a ticket is ready for pickup (default: "To Do")
 
 To get your API token:
@@ -146,7 +145,7 @@ Create a new Jira ticket using default settings. Only requires a summary - uses 
 - Project: First project in `PROJECT_KEYS`
 - Priority: `DEFAULT_PRIORITY`
 - Issue type: `DEFAULT_ISSUE_TYPE`
-- Sprint: `DEFAULT_SPRINT` (if set)
+- Sprint: `DEFAULT_SPRINT_ID` (if set)
 
 #### `create_new_epic`
 Create a new Jira epic. Automatically checks for similar existing epics and warns if potential duplicates are found.
