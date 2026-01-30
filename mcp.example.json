@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "jira-assistant": {
+      "command": "poetry",
+      "args": ["run", "jira-assistant"],
+      "cwd": "C:\\Users\\YourUsername\\path\\to\\jira-assistant"
+    }
+  }
+}
