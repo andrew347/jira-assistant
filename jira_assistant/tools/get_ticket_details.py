@@ -24,10 +24,12 @@ tool = Tool(
 
 async def fetch_ticket_details(ticket_key: str) -> dict[str, Any]:
     async with httpx.AsyncClient() as client:
+        # Fetch ticket details
         response = await client.get(
             f"{JIRA_HOST}/rest/api/2/issue/{ticket_key}",
             params={
-                "fields": "summary,status,priority,created,updated,project,issuetype,description,comment,assignee,reporter",
+                "fields": "*all",
+                "expand": "names",
             },
             headers={
                 "Authorization": get_auth_header(),
@@ -38,6 +40,19 @@ async def fetch_ticket_details(ticket_key: str) -> dict[str, Any]:
             error_detail = response.text
             raise Exception(f"Jira API error {response.status_code}: {error_detail}")
         issue = response.json()
+        
+        # Fetch available transitions
+        transitions_response = await client.get(
+            f"{JIRA_HOST}/rest/api/3/issue/{ticket_key}/transitions",
+            headers={
+                "Authorization": get_auth_header(),
+                "Accept": "application/json",
+            },
+        )
+        available_transitions = []
+        if transitions_response.is_success:
+            transitions_data = transitions_response.json()
+            available_transitions = [t.get("name") for t in transitions_data.get("transitions", [])]
     
     fields = issue.get("fields", {})
     description = fields.get("description")
@@ -70,13 +85,50 @@ async def fetch_ticket_details(ticket_key: str) -> dict[str, Any]:
             "body": comment_body,
         })
     
+    # Parse sprint info - find sprint field dynamically
+    # Sprint fields are typically custom fields with sprint data (list of objects with name, state, etc.)
+    sprint = None
+    field_names = issue.get("names", {})
+    for field_id, field_name in field_names.items():
+        if "sprint" in field_name.lower():
+            sprint_data = fields.get(field_id)
+            if sprint_data:
+                if isinstance(sprint_data, list) and sprint_data:
+                    # Get the most recent/active sprint
+                    for s in sprint_data:
+                        if isinstance(s, dict):
+                            # Prefer active sprint
+                            if s.get("state") == "active":
+                                sprint = s.get("name")
+                                break
+                            elif not sprint:
+                                sprint = s.get("name")
+                        else:
+                            sprint = str(s)
+                elif isinstance(sprint_data, dict):
+                    sprint = sprint_data.get("name")
+            break
+    
+    # Parse parent (epic)
+    parent = fields.get("parent")
+    epic_key = parent.get("key") if parent else None
+    epic_summary = parent.get("fields", {}).get("summary") if parent else None
+    
+    # Parse labels
+    labels = fields.get("labels", [])
+    
     return {
         "key": issue.get("key"),
         "summary": fields.get("summary"),
         "status": fields.get("status", {}).get("name"),
+        "available_transitions": available_transitions,
         "priority": fields.get("priority", {}).get("name"),
         "project": fields.get("project", {}).get("name"),
         "type": fields.get("issuetype", {}).get("name"),
+        "sprint": sprint,
+        "epic_key": epic_key,
+        "epic_summary": epic_summary,
+        "labels": labels,
         "assignee": fields.get("assignee", {}).get("displayName") if fields.get("assignee") else None,
         "reporter": fields.get("reporter", {}).get("displayName") if fields.get("reporter") else None,
         "created": fields.get("created"),
@@ -94,12 +146,20 @@ async def handler(arguments: dict[str, Any]) -> list[TextContent]:
     
     ticket = await fetch_ticket_details(ticket_key)
     
+    transitions = ", ".join(ticket['available_transitions']) if ticket['available_transitions'] else "None"
+    labels = ", ".join(ticket['labels']) if ticket['labels'] else "None"
+    epic = f"{ticket['epic_key']} ({ticket['epic_summary']})" if ticket['epic_key'] else "None"
+    
     result = f"""Ticket: {ticket['key']}
 Summary: {ticket['summary']}
 Status: {ticket['status']}
+Available transitions: {transitions}
 Priority: {ticket['priority']}
 Project: {ticket['project']}
 Type: {ticket['type']}
+Sprint: {ticket['sprint'] or 'None'}
+Epic: {epic}
+Labels: {labels}
 Assignee: {ticket['assignee'] or 'Unassigned'}
 Reporter: {ticket['reporter'] or 'Unknown'}
 Created: {ticket['created']}

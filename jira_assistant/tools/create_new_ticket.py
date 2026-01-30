@@ -3,13 +3,13 @@ from typing import Any
 import httpx
 from mcp.types import Tool, TextContent
 
-from ..config import JIRA_HOST, DEFAULT_PROJECT, DEFAULT_PRIORITY, DEFAULT_ISSUE_TYPE, get_auth_header
+from ..config import JIRA_HOST, DEFAULT_PROJECT, DEFAULT_PRIORITY, DEFAULT_ISSUE_TYPE, DEFAULT_SPRINT, SPRINT_FIELD, get_auth_header
 from .search_similar_tickets import search_similar_tickets
 
 
 tool = Tool(
     name="create_new_ticket",
-    description=f"Create a new Jira ticket using default settings (project: {DEFAULT_PROJECT or 'not set'}, priority: {DEFAULT_PRIORITY}, type: {DEFAULT_ISSUE_TYPE}). Only requires a summary. For more control, use create_new_ticket_advanced.",
+    description=f"Create a new Jira ticket using default settings (project: {DEFAULT_PROJECT or 'not set'}, priority: {DEFAULT_PRIORITY}, type: {DEFAULT_ISSUE_TYPE}, sprint: {DEFAULT_SPRINT or 'not set'}). Only requires a summary. For more control, use create_new_ticket_advanced.",
     inputSchema={
         "type": "object",
         "properties": {
@@ -45,6 +45,9 @@ async def create_ticket(
         "issuetype": {"name": DEFAULT_ISSUE_TYPE},
         "priority": {"name": DEFAULT_PRIORITY},
     }
+    
+    if DEFAULT_SPRINT:
+        fields[SPRINT_FIELD] = int(DEFAULT_SPRINT)
     
     if description:
         fields["description"] = {

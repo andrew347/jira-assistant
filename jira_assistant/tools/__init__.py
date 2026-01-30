@@ -5,10 +5,9 @@ from .get_epic_tickets import tool as get_epic_tickets_tool, handler as get_epic
 from .get_ticket_details import tool as get_ticket_details_tool, handler as get_ticket_details_handler
 from .search_similar_tickets import tool as search_similar_tickets_tool, handler as search_similar_tickets_handler
 from .create_new_ticket import tool as create_new_ticket_tool, handler as create_new_ticket_handler
-from .create_new_ticket_advanced import tool as create_new_ticket_advanced_tool, handler as create_new_ticket_advanced_handler
 from .create_new_epic import tool as create_new_epic_tool, handler as create_new_epic_handler
 from .update_ticket_details import tool as update_ticket_details_tool, handler as update_ticket_details_handler
-from .transition_ticket import tool as transition_ticket_tool, handler as transition_ticket_handler
+from .add_ticket_comment import tool as add_ticket_comment_tool, handler as add_ticket_comment_handler
 
 ALL_TOOLS = [
     get_assigned_tickets_tool,
@@ -18,10 +17,9 @@ ALL_TOOLS = [
     get_ticket_details_tool,
     search_similar_tickets_tool,
     create_new_ticket_tool,
-    create_new_ticket_advanced_tool,
     create_new_epic_tool,
     update_ticket_details_tool,
-    transition_ticket_tool,
+    add_ticket_comment_tool,
 ]
 
 TOOL_HANDLERS = {
@@ -32,8 +30,7 @@ TOOL_HANDLERS = {
     "get_ticket_details": get_ticket_details_handler,
     "search_similar_tickets": search_similar_tickets_handler,
     "create_new_ticket": create_new_ticket_handler,
-    "create_new_ticket_advanced": create_new_ticket_advanced_handler,
     "create_new_epic": create_new_epic_handler,
     "update_ticket_details": update_ticket_details_handler,
-    "transition_ticket": transition_ticket_handler,
+    "add_ticket_comment": add_ticket_comment_handler,
 }

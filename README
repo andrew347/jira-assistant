@@ -31,6 +31,8 @@ ACTIONABLE_STATUS=To Do
 - `PROJECT_KEYS` (required for defaults): Comma-separated list of project keys. The first project becomes the default for `create_new_ticket`.
 - `DEFAULT_PRIORITY` (optional): Default priority for new tickets (default: "Medium")
 - `DEFAULT_ISSUE_TYPE` (optional): Default issue type for new tickets (default: "Task")
+- `DEFAULT_SPRINT` (optional): Default sprint ID for new tickets (numeric)
+- `SPRINT_FIELD` (optional): Custom field name for sprints (default: "customfield_10020")
 - `ACTIONABLE_STATUS` (optional): Status that indicates a ticket is ready for pickup (default: "To Do")
 
 To get your API token:
@@ -144,19 +146,7 @@ Create a new Jira ticket using default settings. Only requires a summary - uses 
 - Project: First project in `PROJECT_KEYS`
 - Priority: `DEFAULT_PRIORITY`
 - Issue type: `DEFAULT_ISSUE_TYPE`
-
-#### `create_new_ticket_advanced`
-Create a new Jira ticket with full control over all fields.
-
-**Parameters:**
-- `summary` (required): Ticket title/summary
-- `project` (optional): Project key (defaults to first in PROJECT_KEYS)
-- `description` (optional): Detailed description of the ticket
-- `issue_type` (optional): Issue type (defaults to DEFAULT_ISSUE_TYPE)
-- `priority` (optional): Priority level (defaults to DEFAULT_PRIORITY)
-- `epic_key` (optional): Epic key to link this ticket to
-- `labels` (optional): Array of labels (e.g., ["backend", "urgent"])
-- `assignee` (optional): Assignee account ID or email
+- Sprint: `DEFAULT_SPRINT` (if set)
 
 #### `create_new_epic`
 Create a new Jira epic. Automatically checks for similar existing epics and warns if potential duplicates are found.
@@ -167,20 +157,25 @@ Create a new Jira epic. Automatically checks for similar existing epics and warn
 - `description` (optional): Detailed description of the epic
 
 #### `update_ticket_details`
-Update fields on an existing Jira ticket.
+Update fields on an existing Jira ticket. Only provided fields will be updated. Can also transition the ticket to a new status.
 
 **Parameters:**
 - `ticket_key` (required): The Jira ticket key (e.g., "PROJ-123")
 - `summary` (optional): New ticket title/summary
 - `description` (optional): New description
+- `status` (optional): Transition to a new status (e.g., "In Progress", "Done")
 - `assignee` (optional): Assignee account ID or email
+- `priority` (optional): Priority (e.g., "Highest", "High", "Medium", "Low", "Lowest")
+- `labels` (optional): Array of labels (replaces existing labels)
+- `sprint` (optional): Sprint ID (numeric) to move the ticket to
+- `epic_key` (optional): Epic key to link this ticket to
 
-#### `transition_ticket`
-Move a ticket to a different status.
+#### `add_ticket_comment`
+Add a comment to a Jira ticket.
 
 **Parameters:**
 - `ticket_key` (required): The Jira ticket key (e.g., "PROJ-123")
-- `transition_name` (required): Name of the transition (e.g., "In Progress", "Done")
+- `comment` (required): The comment text to add
 
 ## Development
 
@@ -214,8 +209,8 @@ jira_assistant/
     ├── get_ticket_details.py
     ├── search_similar_tickets.py
     ├── create_new_ticket.py
-    ├── create_new_ticket_advanced.py
     ├── create_new_epic.py
     ├── update_ticket_details.py
-    └── transition_ticket.py
+    ├── add_ticket_comment.py
+    └── transition_ticket.py    # Internal helper (used by update_ticket_details)
 ```

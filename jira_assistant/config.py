@@ -13,6 +13,8 @@ PROJECT_KEYS = [k.strip() for k in os.getenv("PROJECT_KEYS", "").split(",") if k
 DEFAULT_PROJECT = PROJECT_KEYS[0] if PROJECT_KEYS else ""
 DEFAULT_PRIORITY = os.getenv("DEFAULT_PRIORITY", "Medium")
 DEFAULT_ISSUE_TYPE = os.getenv("DEFAULT_ISSUE_TYPE", "Task")
+DEFAULT_SPRINT = os.getenv("DEFAULT_SPRINT", "")  # Sprint ID (numeric)
+SPRINT_FIELD = os.getenv("SPRINT_FIELD", "customfield_10020")  # Sprint custom field name
 
 
 def get_auth_header() -> str:
