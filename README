@@ -39,11 +39,68 @@ To get your API token:
 2. Click "Create API token"
 3. Copy the token and paste it in your `.env` file
 
-### 3. Configure your MCP client
+### 3. Install as a global tool
+
+Install the MCP server as a global command using `uv` (recommended for teams):
+
+```powershell
+uv tool install --editable .
+```
+
+This installs `jira-assistant` as a globally available command. The `--editable` flag means code changes apply immediately without reinstalling.
+
+### 4. Configure your MCP client
 
 Add to your MCP client config (Claude Desktop: `%APPDATA%\Claude\claude_desktop_config.json`, Cursor: `~/.cursor/mcp.json`).
 
-**Option A: Using virtualenv Python directly (recommended)**
+**Recommended: Using globally installed command**
+
+```json
+{
+  "mcpServers": {
+    "jira-assistant": {
+      "command": "jira-assistant"
+    }
+  }
+}
+```
+
+This approach works consistently across all team members regardless of where they cloned the repo.
+
+See `mcp.example.json` for a template.
+
+<details>
+<summary>Alternative configurations</summary>
+
+**Using uv run (no global install)**
+
+```json
+{
+  "mcpServers": {
+    "jira-assistant": {
+      "command": "uv",
+      "args": ["run", "jira-assistant"],
+      "cwd": "C:/Users/YourUsername/path/to/jira-assistant"
+    }
+  }
+}
+```
+
+**Using poetry with cwd**
+
+```json
+{
+  "mcpServers": {
+    "jira-assistant": {
+      "command": "poetry",
+      "args": ["run", "jira-assistant"],
+      "cwd": "C:/Users/YourUsername/path/to/jira-assistant"
+    }
+  }
+}
+```
+
+**Using virtualenv Python directly**
 
 First, find your virtualenv path:
 
@@ -64,21 +121,7 @@ Then add to your config (use forward slashes):
 }
 ```
 
-**Option B: Using poetry with cwd**
-
-```json
-{
-  "mcpServers": {
-    "jira-assistant": {
-      "command": "poetry",
-      "args": ["run", "jira-assistant"],
-      "cwd": "C:/Users/YourUsername/path/to/jira-assistant"
-    }
-  }
-}
-```
-
-See `mcp.example.json` for a template.
+</details>
 
 ## Available Tools
 

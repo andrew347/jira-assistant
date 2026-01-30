@@ -8,7 +8,7 @@ from ..config import JIRA_HOST, get_auth_header
 
 tool = Tool(
     name="add_ticket_comment",
-    description="Add a comment to a Jira ticket.",
+    description="Add a comment to a Jira ticket. ",
     inputSchema={
         "type": "object",
         "properties": {

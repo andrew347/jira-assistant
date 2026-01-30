@@ -1,8 +1,7 @@
 {
   "mcpServers": {
     "jira-assistant": {
-      "command": "C:/Users/YourUsername/AppData/Local/pypoetry/Cache/virtualenvs/jira-assistant-XXXXXX-py3.XX/Scripts/python.exe",
-      "args": ["-m", "jira_assistant.server"]
+      "command": "jira-assistant"
     }
   }
 }
