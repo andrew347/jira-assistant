@@ -10,6 +10,9 @@ JIRA_EMAIL = os.getenv("JIRA_EMAIL", "")
 JIRA_API_TOKEN = os.getenv("JIRA_API_TOKEN", "")
 ACTIONABLE_STATUS = os.getenv("ACTIONABLE_STATUS", "To Do")
 PROJECT_KEYS = [k.strip() for k in os.getenv("PROJECT_KEYS", "").split(",") if k.strip()]
+DEFAULT_PROJECT = PROJECT_KEYS[0] if PROJECT_KEYS else ""
+DEFAULT_PRIORITY = os.getenv("DEFAULT_PRIORITY", "Medium")
+DEFAULT_ISSUE_TYPE = os.getenv("DEFAULT_ISSUE_TYPE", "Task")
 
 
 def get_auth_header() -> str:

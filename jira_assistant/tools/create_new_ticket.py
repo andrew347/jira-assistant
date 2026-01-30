@@ -3,20 +3,16 @@ from typing import Any
 import httpx
 from mcp.types import Tool, TextContent
 
-from ..config import JIRA_HOST, get_auth_header
+from ..config import JIRA_HOST, DEFAULT_PROJECT, DEFAULT_PRIORITY, DEFAULT_ISSUE_TYPE, get_auth_header
 from .search_similar_tickets import search_similar_tickets
 
 
 tool = Tool(
     name="create_new_ticket",
-    description="Create a new Jira ticket. Automatically checks for similar existing tickets before creation and warns if potential duplicates are found.",
+    description=f"Create a new Jira ticket using default settings (project: {DEFAULT_PROJECT or 'not set'}, priority: {DEFAULT_PRIORITY}, type: {DEFAULT_ISSUE_TYPE}). Only requires a summary. For more control, use create_new_ticket_advanced.",
     inputSchema={
         "type": "object",
         "properties": {
-            "project": {
-                "type": "string",
-                "description": "Project key (e.g., 'PROJ')",
-            },
             "summary": {
                 "type": "string",
                 "description": "Ticket title/summary",
@@ -25,32 +21,29 @@ tool = Tool(
                 "type": "string",
                 "description": "Detailed description of the ticket",
             },
-            "issue_type": {
-                "type": "string",
-                "description": "Issue type (default: 'Task')",
-                "default": "Task",
-            },
             "epic_key": {
                 "type": "string",
                 "description": "Epic key to link this ticket to (e.g., 'PROJ-100')",
             },
         },
-        "required": ["project", "summary"],
+        "required": ["summary"],
     },
 )
 
 
 async def create_ticket(
-    project: str,
     summary: str,
     description: str | None = None,
-    issue_type: str = "Task",
     epic_key: str | None = None,
 ) -> dict[str, Any]:
+    if not DEFAULT_PROJECT:
+        raise Exception("No default project configured. Set PROJECT_KEYS in .env or use create_new_ticket_advanced.")
+    
     fields: dict[str, Any] = {
-        "project": {"key": project},
+        "project": {"key": DEFAULT_PROJECT},
         "summary": summary,
-        "issuetype": {"name": issue_type},
+        "issuetype": {"name": DEFAULT_ISSUE_TYPE},
+        "priority": {"name": DEFAULT_PRIORITY},
     }
     
     if description:
@@ -90,10 +83,12 @@ async def create_ticket(
 
 
 async def handler(arguments: dict[str, Any]) -> list[TextContent]:
-    project = arguments.get("project")
     summary = arguments.get("summary")
-    if not project or not summary:
-        return [TextContent(type="text", text="Error: project and summary are required")]
+    if not summary:
+        return [TextContent(type="text", text="Error: summary is required")]
+    
+    if not DEFAULT_PROJECT:
+        return [TextContent(type="text", text="Error: No default project configured. Set PROJECT_KEYS in .env or use create_new_ticket_advanced.")]
     
     similar = await search_similar_tickets(summary, max_results=5)
     
@@ -105,11 +100,9 @@ async def handler(arguments: dict[str, Any]) -> list[TextContent]:
         warning += "\nProceeding with ticket creation...\n\n"
     
     result = await create_ticket(
-        project=project,
         summary=summary,
         description=arguments.get("description"),
-        issue_type=arguments.get("issue_type", "Task"),
         epic_key=arguments.get("epic_key"),
     )
     
-    return [TextContent(type="text", text=f"{warning}Created ticket: {result['key']}\nURL: {result['url']}")]
+    return [TextContent(type="text", text=f"{warning}Created ticket: {result['key']}\nProject: {DEFAULT_PROJECT} | Type: {DEFAULT_ISSUE_TYPE} | Priority: {DEFAULT_PRIORITY}\nURL: {result['url']}")]

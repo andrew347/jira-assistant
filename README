@@ -6,7 +6,7 @@ An MCP (Model Context Protocol) server for managing Jira tickets. Designed for r
 
 ### 1. Install dependencies
 
-```bash
+```powershell
 poetry install
 ```
 
@@ -18,25 +18,52 @@ Create a `.env` file in the project root:
 JIRA_HOST=https://your-domain.atlassian.net
 JIRA_EMAIL=your-email@example.com
 JIRA_API_TOKEN=your-api-token-here
-ACTIONABLE_STATUS=To Do
 PROJECT_KEYS=PROJ1,PROJ2
+DEFAULT_PRIORITY=Medium
+DEFAULT_ISSUE_TYPE=Task
+ACTIONABLE_STATUS=To Do
 ```
 
 **Environment Variables:**
 - `JIRA_HOST` (required): Your Jira instance URL
 - `JIRA_EMAIL` (required): Your Jira account email
 - `JIRA_API_TOKEN` (required): Your Jira API token
+- `PROJECT_KEYS` (required for defaults): Comma-separated list of project keys. The first project becomes the default for `create_new_ticket`.
+- `DEFAULT_PRIORITY` (optional): Default priority for new tickets (default: "Medium")
+- `DEFAULT_ISSUE_TYPE` (optional): Default issue type for new tickets (default: "Task")
 - `ACTIONABLE_STATUS` (optional): Status that indicates a ticket is ready for pickup (default: "To Do")
-- `PROJECT_KEYS` (optional): Comma-separated list of project keys to scope queries
 
 To get your API token:
 1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
 2. Click "Create API token"
 3. Copy the token and paste it in your `.env` file
 
-### 3. Configure Cursor to use this MCP server
+### 3. Configure your MCP client
 
-Add the following to your Cursor MCP settings (`~/.cursor/mcp.json` or the workspace `.cursor/mcp.json`):
+Add to your MCP client config (Claude Desktop: `%APPDATA%\Claude\claude_desktop_config.json`, Cursor: `~/.cursor/mcp.json`).
+
+**Option A: Using virtualenv Python directly (recommended)**
+
+First, find your virtualenv path:
+
+```powershell
+poetry env info --path
+```
+
+Then add to your config (use forward slashes):
+
+```json
+{
+  "mcpServers": {
+    "jira-assistant": {
+      "command": "C:/Users/YourUsername/AppData/Local/pypoetry/Cache/virtualenvs/jira-assistant-XXXXXX-py3.XX/Scripts/python.exe",
+      "args": ["-m", "jira_assistant.server"]
+    }
+  }
+}
+```
+
+**Option B: Using poetry with cwd**
 
 ```json
 {
@@ -44,11 +71,13 @@ Add the following to your Cursor MCP settings (`~/.cursor/mcp.json` or the works
     "jira-assistant": {
       "command": "poetry",
       "args": ["run", "jira-assistant"],
-      "cwd": "C:\\dev\\jira-assistant"
+      "cwd": "C:/Users/YourUsername/path/to/jira-assistant"
     }
   }
 }
 ```
+
+See `mcp.example.json` for a template.
 
 ## Available Tools
 
@@ -78,6 +107,14 @@ Get open epics that can be used to link new work.
 - `max_results` (optional): Maximum number of epics to return (default: 50)
 - `project` (optional): Filter by project key
 
+#### `get_epic_tickets`
+Get all tickets/stories that belong to a specific epic. Results are grouped by status.
+
+**Parameters:**
+- `epic_key` (required): The epic key (e.g., "PROJ-100")
+- `max_results` (optional): Maximum number of tickets to return (default: 50)
+- `include_done` (optional): Include completed tickets (default: true)
+
 #### `get_ticket_details`
 Get detailed information about a specific ticket including description and comments.
 
@@ -96,14 +133,38 @@ Search for tickets with similar text to find potential duplicates or related wor
 ### Write Operations
 
 #### `create_new_ticket`
-Create a new Jira ticket. Automatically checks for similar existing tickets and warns if potential duplicates are found.
+Create a new Jira ticket using default settings. Only requires a summary - uses defaults from environment for project, priority, and issue type.
+
+**Parameters:**
+- `summary` (required): Ticket title/summary
+- `description` (optional): Detailed description of the ticket
+- `epic_key` (optional): Epic key to link this ticket to
+
+**Uses defaults from .env:**
+- Project: First project in `PROJECT_KEYS`
+- Priority: `DEFAULT_PRIORITY`
+- Issue type: `DEFAULT_ISSUE_TYPE`
+
+#### `create_new_ticket_advanced`
+Create a new Jira ticket with full control over all fields.
+
+**Parameters:**
+- `summary` (required): Ticket title/summary
+- `project` (optional): Project key (defaults to first in PROJECT_KEYS)
+- `description` (optional): Detailed description of the ticket
+- `issue_type` (optional): Issue type (defaults to DEFAULT_ISSUE_TYPE)
+- `priority` (optional): Priority level (defaults to DEFAULT_PRIORITY)
+- `epic_key` (optional): Epic key to link this ticket to
+- `labels` (optional): Array of labels (e.g., ["backend", "urgent"])
+- `assignee` (optional): Assignee account ID or email
+
+#### `create_new_epic`
+Create a new Jira epic. Automatically checks for similar existing epics and warns if potential duplicates are found.
 
 **Parameters:**
 - `project` (required): Project key (e.g., "PROJ")
-- `summary` (required): Ticket title/summary
-- `description` (optional): Detailed description of the ticket
-- `issue_type` (optional): Issue type (default: "Task")
-- `epic_key` (optional): Epic key to link this ticket to
+- `summary` (required): Epic title/summary
+- `description` (optional): Detailed description of the epic
 
 #### `update_ticket_details`
 Update fields on an existing Jira ticket.
@@ -123,14 +184,38 @@ Move a ticket to a different status.
 
 ## Development
 
-Run the test script to verify your configuration:
+Verify your configuration loads correctly:
 
-```bash
-poetry run python test_api.py
+```powershell
+poetry run python -c "from jira_assistant.tools import ALL_TOOLS; print(f'{len(ALL_TOOLS)} tools loaded')"
 ```
 
 Run the server directly for testing:
 
-```bash
+```powershell
 poetry run python -m jira_assistant.server
+```
+
+Note: The server uses stdio for communication, so it will produce no output when run directly. This is expected behavior.
+
+## Project Structure
+
+```
+jira_assistant/
+├── __init__.py
+├── config.py          # Environment variables and auth helpers
+├── server.py          # MCP server orchestration
+└── tools/
+    ├── __init__.py
+    ├── get_assigned_tickets.py
+    ├── get_available_tickets.py
+    ├── get_available_epics.py
+    ├── get_epic_tickets.py
+    ├── get_ticket_details.py
+    ├── search_similar_tickets.py
+    ├── create_new_ticket.py
+    ├── create_new_ticket_advanced.py
+    ├── create_new_epic.py
+    ├── update_ticket_details.py
+    └── transition_ticket.py
 ```
