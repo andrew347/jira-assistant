@@ -1,0 +1,1 @@
+"""Jira Assistant MCP Server."""

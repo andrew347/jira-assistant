@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "jira-assistant"
+version = "0.1.0"
+description = "An MCP server for managing Jira tickets"
+authors = ["Andrew"]
+readme = "README"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+httpx = "^0.28"
+python-dotenv = "^1.0"
+mcp = "^1.0"
+
+[tool.poetry.scripts]
+jira-assistant = "jira_assistant.server:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
