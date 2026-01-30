@@ -31,7 +31,7 @@ tool = Tool(
             },
             "assignee": {
                 "type": "string",
-                "description": "Assignee account ID or email",
+                "description": "Assignee: use 'me' for self-assignment, 'unassigned' to remove assignee, or a Jira account ID.",
             },
             "priority": {
                 "type": "string",
@@ -84,8 +84,27 @@ async def update_ticket(
             ]
         }
     
-    if assignee:
-        fields["assignee"] = {"accountId": assignee} if "@" not in assignee else {"emailAddress": assignee}
+    if assignee is not None:
+        if assignee.lower() == "unassigned" or assignee == "":
+            fields["assignee"] = None
+        elif assignee.lower() == "me":
+            # Get current user's account ID
+            async with httpx.AsyncClient() as client:
+                me_response = await client.get(
+                    f"{JIRA_HOST}/rest/api/3/myself",
+                    headers={
+                        "Authorization": get_auth_header(),
+                        "Accept": "application/json",
+                    },
+                )
+                if me_response.is_success:
+                    me_data = me_response.json()
+                    fields["assignee"] = {"accountId": me_data.get("accountId")}
+                else:
+                    raise Exception("Failed to get current user info for self-assignment")
+        else:
+            # Jira Cloud requires accountId for assignment
+            fields["assignee"] = {"accountId": assignee}
     
     if priority:
         fields["priority"] = {"name": priority}
