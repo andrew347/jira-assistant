@@ -9,7 +9,7 @@ from .search_similar_tickets import search_similar_tickets
 
 tool = Tool(
     name="create_new_ticket",
-    description=f"Create a new Jira ticket using default settings (project: {DEFAULT_PROJECT or 'not set'}, priority: {DEFAULT_PRIORITY}, type: {DEFAULT_ISSUE_TYPE}, sprint: {DEFAULT_SPRINT_ID or 'not set'}). IMPORTANT: Before calling this tool, ALWAYS use search_similar_tickets first to check for duplicates or related existing work. This tool also runs a duplicate check and will warn if similar tickets exist.",
+    description=f"Create a new Jira ticket using default settings (project: {DEFAULT_PROJECT or 'not set'}, priority: {DEFAULT_PRIORITY}, type: {DEFAULT_ISSUE_TYPE}, sprint: {DEFAULT_SPRINT_ID or 'not set'}). IMPORTANT: Before calling this tool, ALWAYS use search_similar_tickets first to check for duplicates or related existing work. Ticket descriptions MUST include: (1) A 1-2 sentence introduction explaining the context/problem, and (2) Bulleted success criteria defining what 'done' looks like.",
     inputSchema={
         "type": "object",
         "properties": {
