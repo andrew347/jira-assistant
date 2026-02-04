@@ -8,6 +8,8 @@ from .create_new_ticket import tool as create_new_ticket_tool, handler as create
 from .create_new_epic import tool as create_new_epic_tool, handler as create_new_epic_handler
 from .update_ticket_details import tool as update_ticket_details_tool, handler as update_ticket_details_handler
 from .add_ticket_comment import tool as add_ticket_comment_tool, handler as add_ticket_comment_handler
+from .list_sprints import tool as list_sprints_tool, handler as list_sprints_handler
+from .update_config import tool as update_config_tool, handler as update_config_handler
 
 ALL_TOOLS = [
     get_assigned_tickets_tool,
@@ -20,6 +22,8 @@ ALL_TOOLS = [
     create_new_epic_tool,
     update_ticket_details_tool,
     add_ticket_comment_tool,
+    list_sprints_tool,
+    update_config_tool,
 ]
 
 TOOL_HANDLERS = {
@@ -33,4 +37,6 @@ TOOL_HANDLERS = {
     "create_new_epic": create_new_epic_handler,
     "update_ticket_details": update_ticket_details_handler,
     "add_ticket_comment": add_ticket_comment_handler,
+    "list_sprints": list_sprints_handler,
+    "update_config": update_config_handler,
 }

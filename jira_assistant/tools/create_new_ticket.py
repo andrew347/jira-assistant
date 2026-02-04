@@ -3,13 +3,13 @@ from typing import Any
 import httpx
 from mcp.types import Tool, TextContent
 
-from ..config import JIRA_HOST, DEFAULT_PROJECT, DEFAULT_PRIORITY, DEFAULT_ISSUE_TYPE, DEFAULT_SPRINT_ID, SPRINT_FIELD, get_auth_header
+from ..config import JIRA_HOST, DEFAULT_PRIORITY, DEFAULT_ISSUE_TYPE, SPRINT_FIELD, get_auth_header, get_default_sprint_id, get_default_project
 from .search_similar_tickets import search_similar_tickets
 
 
 tool = Tool(
     name="create_new_ticket",
-    description=f"Create a new Jira ticket using default settings (project: {DEFAULT_PROJECT or 'not set'}, priority: {DEFAULT_PRIORITY}, type: {DEFAULT_ISSUE_TYPE}, sprint: {DEFAULT_SPRINT_ID or 'not set'}). IMPORTANT: Before calling this tool, ALWAYS use search_similar_tickets first to check for duplicates or related existing work. Ticket descriptions MUST include: (1) A 1-2 sentence introduction explaining the context/problem, and (2) Bulleted success criteria defining what 'done' looks like.",
+    description=f"Create a new Jira ticket using default settings (priority: {DEFAULT_PRIORITY}, type: {DEFAULT_ISSUE_TYPE}). Uses current default project and sprint from config (set via update_config). IMPORTANT: Before calling this tool, ALWAYS use search_similar_tickets first to check for duplicates or related existing work. Ticket descriptions MUST include: (1) A 1-2 sentence introduction explaining the context/problem, and (2) Bulleted success criteria defining what 'done' looks like.",
     inputSchema={
         "type": "object",
         "properties": {
@@ -36,18 +36,24 @@ async def create_ticket(
     description: str | None = None,
     epic_key: str | None = None,
 ) -> dict[str, Any]:
-    if not DEFAULT_PROJECT:
-        raise Exception("No default project configured. Set PROJECT_KEYS in .env or use create_new_ticket_advanced.")
+    # If epic_key is provided, extract project from it (e.g., "PROJ2-100" -> "PROJ2")
+    if epic_key:
+        project_key = epic_key.rsplit("-", 1)[0]
+    else:
+        project_key = get_default_project()
+        if not project_key:
+            raise Exception("No default project configured. Set PROJECT_KEYS in .env or use update_config.")
     
     fields: dict[str, Any] = {
-        "project": {"key": DEFAULT_PROJECT},
+        "project": {"key": project_key},
         "summary": summary,
         "issuetype": {"name": DEFAULT_ISSUE_TYPE},
         "priority": {"name": DEFAULT_PRIORITY},
     }
     
-    if DEFAULT_SPRINT_ID:
-        fields[SPRINT_FIELD] = int(DEFAULT_SPRINT_ID)
+    sprint_id = get_default_sprint_id()
+    if sprint_id:
+        fields[SPRINT_FIELD] = int(sprint_id)
     
     if description:
         fields["description"] = {
@@ -90,8 +96,9 @@ async def handler(arguments: dict[str, Any]) -> list[TextContent]:
     if not summary:
         return [TextContent(type="text", text="Error: summary is required")]
     
-    if not DEFAULT_PROJECT:
-        return [TextContent(type="text", text="Error: No default project configured. Set PROJECT_KEYS in .env or use create_new_ticket_advanced.")]
+    default_project = get_default_project()
+    if not default_project:
+        return [TextContent(type="text", text="Error: No default project configured. Set PROJECT_KEYS in .env or use update_config.")]
     
     similar = await search_similar_tickets(summary, max_results=5)
     
@@ -102,10 +109,13 @@ async def handler(arguments: dict[str, Any]) -> list[TextContent]:
             warning += f"  • [{t['key']}] {t['summary']} ({t['status']})\n"
         warning += "\nProceeding with ticket creation...\n\n"
     
+    epic_key = arguments.get("epic_key")
     result = await create_ticket(
         summary=summary,
         description=arguments.get("description"),
-        epic_key=arguments.get("epic_key"),
+        epic_key=epic_key,
     )
     
-    return [TextContent(type="text", text=f"{warning}Created ticket: {result['key']}\nProject: {DEFAULT_PROJECT} | Type: {DEFAULT_ISSUE_TYPE} | Priority: {DEFAULT_PRIORITY}\nURL: {result['url']}")]
+    # Show actual project used (inferred from epic or default)
+    project_used = epic_key.rsplit("-", 1)[0] if epic_key else default_project
+    return [TextContent(type="text", text=f"{warning}Created ticket: {result['key']}\nProject: {project_used} | Type: {DEFAULT_ISSUE_TYPE} | Priority: {DEFAULT_PRIORITY}\nURL: {result['url']}")]
